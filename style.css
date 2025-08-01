@@ -42,6 +42,67 @@ header p {
     margin-bottom: 50px;
 }
 
+.ffmpeg-status {
+    text-align: center;
+    padding: 40px;
+}
+
+.loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.loading-spinner i {
+    font-size: 3rem;
+    color: #1e3c72;
+}
+
+.loading-spinner p {
+    font-size: 1.2rem;
+    color: #666;
+}
+
+.error-message {
+    background: #ffe6e6;
+    border: 2px solid #ff4444;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+    color: #cc0000;
+}
+
+.error-message h3 {
+    margin-bottom: 10px;
+}
+
+.fallback-options {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.fallback-btn {
+    background: #1e3c72;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.3s ease;
+}
+
+.fallback-btn:hover {
+    background: #2a5298;
+}
+
 .upload-area {
     border: 3px dashed #1e3c72;
     border-radius: 15px;
@@ -191,6 +252,7 @@ header p {
     font-size: 0.9rem;
     color: #444;
     margin-top: 15px;
+    white-space: pre-wrap;
 }
 
 .results-section {
@@ -324,5 +386,10 @@ header p {
 
     .ffmpeg-features {
         grid-template-columns: 1fr;
+    }
+
+    .fallback-options {
+        flex-direction: column;
+        align-items: center;
     }
 }
