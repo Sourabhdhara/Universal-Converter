@@ -6,8 +6,6 @@
     <title>FFmpeg Universal Converter</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.7/dist/umd/ffmpeg.js"></script>
-    <script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/util.js"></script>
 </head>
 <body>
     <div class="container">
@@ -18,7 +16,14 @@
 
         <main>
             <div class="converter-section">
-                <div class="upload-area" id="uploadArea">
+                <div class="ffmpeg-status" id="ffmpegStatus">
+                    <div class="loading-spinner">
+                        <i class="fas fa-cog fa-spin"></i>
+                        <p>Loading FFmpeg...</p>
+                    </div>
+                </div>
+
+                <div class="upload-area" id="uploadArea" style="display: none;">
                     <i class="fas fa-cloud-upload-alt"></i>
                     <h3>Drop files here or click to browse</h3>
                     <p>Supports video, audio, and image formats with FFmpeg power</p>
@@ -138,6 +143,6 @@
         </main>
     </div>
 
-    <script src="ffmpeg-converter.js"></script>
+    <script type="module" src="ffmpeg-converter.js"></script>
 </body>
 </html>
