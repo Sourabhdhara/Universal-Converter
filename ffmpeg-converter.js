@@ -1,3 +1,6 @@
+import { FFmpeg } from "https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm/ffmpeg.min.js";
+import { fetchFile, toBlobURL } from "https://unpkg.com/@ffmpeg/util@0.12.1/dist/esm/util.min.js";
+
 class FFmpegUniversalConverter {
     constructor() {
         this.files = [];
@@ -9,14 +12,13 @@ class FFmpegUniversalConverter {
 
     async loadFFmpeg() {
         try {
-            const { FFmpeg } = FFmpegWASM;
-            const { fetchFile } = FFmpegUtil;
+            this.updateStatus('Loading FFmpeg...', 'loading');
             
             this.ffmpeg = new FFmpeg();
-            this.fetchFile = fetchFile;
 
-            // Show loading progress
+            // Set up logging
             this.ffmpeg.on('log', ({ message }) => {
+                console.log('FFmpeg:', message);
                 this.appendLog(message);
             });
 
@@ -26,14 +28,96 @@ class FFmpegUniversalConverter {
                 }
             });
 
-            await this.ffmpeg.load();
+            // Load FFmpeg with proper CDN URLs
+            const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
+            
+            await this.ffmpeg.load({
+                coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+                wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+            });
+            
             this.isLoaded = true;
-            console.log('FFmpeg loaded successfully');
+            this.updateStatus('FFmpeg loaded successfully!', 'success');
+            this.showUploadArea();
             
         } catch (error) {
             console.error('Failed to load FFmpeg:', error);
-            alert('Failed to load FFmpeg. Please refresh the page.');
+            this.updateStatus('Failed to load FFmpeg', 'error');
+            this.showFallbackOptions(error);
         }
+    }
+
+    updateStatus(message, type) {
+        const statusElement = document.getElementById('ffmpegStatus');
+        
+        if (type === 'loading') {
+            statusElement.innerHTML = `
+                <div class="loading-spinner">
+                    <i class="fas fa-cog fa-spin"></i>
+                    <p>${message}</p>
+                </div>
+            `;
+        } else if (type === 'success') {
+            statusElement.innerHTML = `
+                <div style="color: #28a745; text-align: center;">
+                    <i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <p>${message}</p>
+                </div>
+            `;
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, 2000);
+        } else if (type === 'error') {
+            statusElement.innerHTML = `
+                <div class="error-message">
+                    <h3><i class="fas fa-exclamation-triangle"></i> ${message}</h3>
+                    <p>This can happen due to browser compatibility or network issues.</p>
+                </div>
+            `;
+        }
+    }
+
+    showFallbackOptions(error) {
+        const statusElement = document.getElementById('ffmpegStatus');
+        statusElement.innerHTML += `
+            <div class="fallback-options">
+                <button class="fallback-btn" onclick="location.reload()">
+                    <i class="fas fa-refresh"></i> Retry Loading
+                </button>
+                <a href="https://www.freeconvert.com/" target="_blank" class="fallback-btn">
+                    <i class="fas fa-external-link-alt"></i> Use Online Converter
+                </a>
+                <button class="fallback-btn" onclick="window.converter.enableImageConverter()">
+                    <i class="fas fa-image"></i> Image Converter Only
+                </button>
+            </div>
+        `;
+    }
+
+    enableImageConverter() {
+        this.isLoaded = true; // Enable for image conversion only
+        this.showUploadArea();
+        document.getElementById('ffmpegStatus').style.display = 'none';
+        
+        // Limit to image formats only
+        const formatSelect = document.getElementById('outputFormat');
+        formatSelect.innerHTML = `
+            <optgroup label="Image Formats">
+                <option value="jpg">JPG</option>
+                <option value="png">PNG</option>
+                <option value="webp">WebP</option>
+                <option value="bmp">BMP</option>
+            </optgroup>
+        `;
+        
+        // Update file input to accept images only
+        document.getElementById('fileInput').accept = 'image/*';
+        
+        this.appendLog('Image converter mode enabled (no FFmpeg required)');
+    }
+
+    showUploadArea() {
+        document.getElementById('uploadArea').style.display = 'block';
     }
 
     initializeEventListeners() {
@@ -47,6 +131,9 @@ class FFmpegUniversalConverter {
         uploadArea.addEventListener('drop', this.handleDrop.bind(this));
         fileInput.addEventListener('change', this.handleFileSelect.bind(this));
         convertBtn.addEventListener('click', this.convertFiles.bind(this));
+
+        // Make converter available globally for fallback buttons
+        window.converter = this;
     }
 
     handleDragOver(e) {
@@ -117,7 +204,7 @@ class FFmpegUniversalConverter {
 
     async convertFiles() {
         if (!this.isLoaded) {
-            alert('FFmpeg is still loading. Please wait...');
+            alert('FFmpeg is not loaded yet. Please wait or try refreshing.');
             return;
         }
 
@@ -140,7 +227,18 @@ class FFmpegUniversalConverter {
                 const file = this.files[i];
                 this.updateProgressText(`Converting ${file.name} (${i + 1}/${this.files.length})`);
                 
-                const convertedFile = await this.convertSingleFile(file);
+                let convertedFile;
+                
+                // Check if FFmpeg is actually loaded for video/audio, fallback for images
+                if ((file.type.startsWith('video/') || file.type.startsWith('audio/')) && this.ffmpeg) {
+                    convertedFile = await this.convertWithFFmpeg(file);
+                } else if (file.type.startsWith('image/')) {
+                    convertedFile = await this.convertImageFallback(file);
+                } else {
+                    this.appendLog(`Skipping ${file.name} - unsupported without FFmpeg`);
+                    continue;
+                }
+                
                 if (convertedFile) {
                     convertedFiles.push(convertedFile);
                 }
@@ -158,7 +256,7 @@ class FFmpegUniversalConverter {
         }
     }
 
-    async convertSingleFile(file) {
+    async convertWithFFmpeg(file) {
         const outputFormat = document.getElementById('outputFormat').value;
         const quality = document.getElementById('quality').value;
         const resolution = document.getElementById('resolution').value;
@@ -168,7 +266,7 @@ class FFmpegUniversalConverter {
 
         try {
             // Write input file to FFmpeg file system
-            await this.ffmpeg.writeFile(inputName, await this.fetchFile(file));
+            await this.ffmpeg.writeFile(inputName, await fetchFile(file));
 
             // Build FFmpeg command
             const command = this.buildFFmpegCommand(inputName, outputName, file.type, outputFormat, quality, resolution);
@@ -200,11 +298,45 @@ class FFmpegUniversalConverter {
         }
     }
 
+    async convertImageFallback(file) {
+        const outputFormat = document.getElementById('outputFormat').value;
+        const quality = document.getElementById('quality').value;
+
+        return new Promise((resolve, reject) => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                
+                const qualityValue = this.getImageQualityValue(quality);
+                
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        resolve({
+                            blob: blob,
+                            name: this.getOutputFileName(file.name, outputFormat),
+                            size: blob.size
+                        });
+                    } else {
+                        reject(new Error('Failed to convert image'));
+                    }
+                }, `image/${outputFormat}`, qualityValue);
+            };
+            
+            img.onerror = () => reject(new Error('Failed to load image'));
+            img.src = URL.createObjectURL(file);
+        });
+    }
+
     buildFFmpegCommand(inputName, outputName, inputType, outputFormat, quality, resolution) {
         let command = ['-i', inputName];
 
         // Quality settings
-        if (inputType.startsWith('video/') && ['mp4', 'webm', 'avi', 'mov', 'mkv'].includes(outputFormat)) {
+        if (inputType.startsWith('video/') && ['mp4', 'webm', 'avi', 'mov', 'mkv', 'gif'].includes(outputFormat)) {
             // Video conversion
             const crf = this.getCRF(quality);
             
@@ -214,11 +346,13 @@ class FFmpegUniversalConverter {
                 command.push('-c:v', 'libvp9', '-crf', crf.toString(), '-c:a', 'libvorbis');
             } else if (outputFormat === 'gif') {
                 command.push('-vf', 'fps=10,scale=320:-1:flags=lanczos', '-t', '10');
+            } else {
+                command.push('-c:v', 'libx264', '-crf', crf.toString());
             }
 
             // Resolution
             if (resolution !== 'original') {
-                const scale = resolution === '640x360' ? 'scale=640:360' : `scale=${resolution}`;
+                const scale = `scale=${resolution}`;
                 if (command.includes('-vf')) {
                     const vfIndex = command.indexOf('-vf');
                     command[vfIndex + 1] = `${command[vfIndex + 1]},${scale}`;
@@ -227,7 +361,7 @@ class FFmpegUniversalConverter {
                 }
             }
 
-        } else if (inputType.startsWith('audio/') || outputFormat === 'mp3') {
+        } else if (inputType.startsWith('audio/') || ['mp3', 'wav', 'aac', 'ogg', 'flac', 'm4a'].includes(outputFormat)) {
             // Audio conversion
             const bitrate = this.getAudioBitrate(quality);
             
@@ -239,12 +373,8 @@ class FFmpegUniversalConverter {
                 command.push('-vn', '-c:a', 'pcm_s16le');
             } else if (outputFormat === 'ogg') {
                 command.push('-vn', '-c:a', 'libvorbis', '-q:a', '4');
-            }
-
-        } else if (inputType.startsWith('image/')) {
-            // Image conversion
-            if (outputFormat === 'jpg') {
-                command.push('-q:v', this.getImageQuality(quality));
+            } else if (outputFormat === 'flac') {
+                command.push('-vn', '-c:a', 'flac');
             }
         }
 
@@ -274,14 +404,14 @@ class FFmpegUniversalConverter {
         return bitrateMap[quality] || '192k';
     }
 
-    getImageQuality(quality) {
+    getImageQualityValue(quality) {
         const qualityMap = {
-            'high': '2',
-            'medium': '5',
-            'low': '15',
-            'ultralow': '25'
+            'high': 0.9,
+            'medium': 0.7,
+            'low': 0.5,
+            'ultralow': 0.3
         };
-        return qualityMap[quality] || '5';
+        return qualityMap[quality] || 0.7;
     }
 
     getFileExtension(filename) {
@@ -308,6 +438,7 @@ class FFmpegUniversalConverter {
             'flac': 'audio/flac',
             'm4a': 'audio/m4a',
             'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
             'png': 'image/png',
             'webp': 'image/webp',
             'bmp': 'image/bmp',
@@ -358,13 +489,13 @@ class FFmpegUniversalConverter {
 
     appendLog(message) {
         const logs = document.getElementById('ffmpegLogs');
-        logs.innerHTML += message + '\n';
+        logs.textContent += message + '\n';
         logs.scrollTop = logs.scrollHeight;
     }
 
     clearLogs() {
         const logs = document.getElementById('ffmpegLogs');
-        logs.innerHTML = '';
+        logs.textContent = '';
     }
 }
 
