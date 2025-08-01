@@ -1,0 +1,17 @@
+{
+  "name": "ffmpeg-universal-converter",
+  "version": "2.0.0",
+  "description": "Universal file converter using FFmpeg.wasm for client-side processing",
+  "main": "index.html",
+  "scripts": {
+    "start": "live-server . --port=3000",
+    "build": "echo 'Static site ready for deployment'"
+  },
+  "keywords": ["ffmpeg", "converter", "video", "audio", "image", "wasm"],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.12.7",
+    "@ffmpeg/util": "^0.12.1"
+  }
+}

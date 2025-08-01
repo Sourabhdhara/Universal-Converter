@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Universal Converter</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.7/dist/umd/ffmpeg.js"></script>
+    <script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/util.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-magic"></i> FFmpeg Universal Converter</h1>
+            <p>Convert videos, audio, and images using powerful FFmpeg technology</p>
+        </header>
+
+        <main>
+            <div class="converter-section">
+                <div class="upload-area" id="uploadArea">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h3>Drop files here or click to browse</h3>
+                    <p>Supports video, audio, and image formats with FFmpeg power</p>
+                    <input type="file" id="fileInput" multiple accept="video/*,audio/*,image/*">
+                </div>
+
+                <div class="conversion-options" id="conversionOptions" style="display: none;">
+                    <div class="format-selector">
+                        <label for="outputFormat">Convert to:</label>
+                        <select id="outputFormat">
+                            <optgroup label="Video Formats">
+                                <option value="mp4">MP4 (H.264)</option>
+                                <option value="webm">WebM (VP9)</option>
+                                <option value="avi">AVI</option>
+                                <option value="mov">MOV</option>
+                                <option value="mkv">MKV</option>
+                                <option value="gif">GIF (from video)</option>
+                            </optgroup>
+                            <optgroup label="Audio Formats">
+                                <option value="mp3">MP3</option>
+                                <option value="wav">WAV</option>
+                                <option value="aac">AAC</option>
+                                <option value="ogg">OGG</option>
+                                <option value="flac">FLAC</option>
+                                <option value="m4a">M4A</option>
+                            </optgroup>
+                            <optgroup label="Image Formats">
+                                <option value="jpg">JPG</option>
+                                <option value="png">PNG</option>
+                                <option value="webp">WebP</option>
+                                <option value="bmp">BMP</option>
+                                <option value="tiff">TIFF</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="quality-options">
+                        <label for="quality">Quality:</label>
+                        <select id="quality">
+                            <option value="high">High Quality (CRF 18)</option>
+                            <option value="medium" selected>Medium Quality (CRF 23)</option>
+                            <option value="low">Low Quality (CRF 28)</option>
+                            <option value="ultralow">Ultra Compressed</option>
+                        </select>
+                    </div>
+
+                    <div class="advanced-options">
+                        <label for="resolution">Resolution:</label>
+                        <select id="resolution">
+                            <option value="original">Keep Original</option>
+                            <option value="1920x1080">1080p (1920x1080)</option>
+                            <option value="1280x720">720p (1280x720)</option>
+                            <option value="854x480">480p (854x480)</option>
+                            <option value="640x360">360p (640x360)</option>
+                        </select>
+                    </div>
+
+                    <button id="convertBtn" class="convert-btn">
+                        <i class="fas fa-cogs"></i> Convert with FFmpeg
+                    </button>
+                </div>
+
+                <div class="progress-section" id="progressSection" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p id="progressText">Preparing conversion...</p>
+                    <div class="ffmpeg-logs" id="ffmpegLogs"></div>
+                </div>
+
+                <div class="results-section" id="resultsSection" style="display: none;">
+                    <h3><i class="fas fa-check-circle"></i> Conversion Complete!</h3>
+                    <div id="downloadLinks"></div>
+                </div>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i class="fas fa-video"></i>
+                    <h3>Video Conversion</h3>
+                    <p>Convert MP4, AVI, MOV, MKV, WebM with H.264, H.265, VP9 codecs</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-music"></i>
+                    <h3>Audio Processing</h3>
+                    <p>Extract audio, convert MP3, WAV, FLAC, AAC with quality control</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-image"></i>
+                    <h3>Image Conversion</h3>
+                    <p>Convert JPG, PNG, WebP, create GIFs from videos</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-microchip"></i>
+                    <h3>FFmpeg Power</h3>
+                    <p>Client-side processing with full FFmpeg capabilities in browser</p>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h2>FFmpeg Features Available</h2>
+                <div class="ffmpeg-features">
+                    <div class="feature-item">
+                        <i class="fas fa-bolt"></i>
+                        <strong>Real-time Processing:</strong> No server uploads needed
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <strong>Privacy:</strong> Files never leave your browser
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-tools"></i>
+                        <strong>Advanced Options:</strong> CRF quality, resolution control
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="ffmpeg-converter.js"></script>
+</body>
+</html>
